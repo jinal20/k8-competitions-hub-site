@@ -109,7 +109,7 @@ function kidView(kidId) {
   const byId = Object.fromEntries(state.competitions.map(c => [c.id, c]));
   const tiers = [1, 2, 3];
   const cal = (kid.calendar || []).map(e =>
-    `<tr><td>${e.month}</td><td>${e.item}</td><td>${e.action}</td></tr>`).join("");
+    `<tr><td>${e.month}</td><td>${e.item}</td><td>${actionCell(e)}</td></tr>`).join("");
   let html = `<h2>${kid.label} · Grade ${kid.grade}</h2>`;
   if (cal) html += `<h3>Upcoming</h3><table><thead><tr><th>When</th><th>Item</th><th>Action</th></tr></thead><tbody>${cal}</tbody></table>`;
   for (const t of tiers) {
@@ -133,6 +133,12 @@ function kidView(kidId) {
 const MONTH_ORDER = ["Aug-Sep","Oct-Nov","Nov","Dec-Jan","Jan","Jan 29","Jan-Mar","Feb-Mar","Mar","Apr 2","Apr 18","May-Jun","Jun 12"];
 function monthRank(m) { const i = MONTH_ORDER.indexOf(m); return i === -1 ? 99 : i; }
 
+// Render a calendar entry's action as a registration link when one is present.
+function actionCell(e) {
+  if (!e.link) return e.action;
+  return `<a href="${e.link}" target="_blank" rel="noopener">${e.action} ↗</a>`;
+}
+
 function calendarView() {
   app.innerHTML = `
     <div class="controls">
@@ -153,7 +159,7 @@ function calendarView() {
     }
     rows.sort((a, b) => monthRank(a.month) - monthRank(b.month));
     document.getElementById("calbody").innerHTML = rows.map(r =>
-      `<tr><td>${r.month}</td><td>${r.kid}</td><td>${r.item}</td><td>${r.action}</td></tr>`).join("")
+      `<tr><td>${r.month}</td><td>${r.kid}</td><td>${r.item}</td><td>${actionCell(r)}</td></tr>`).join("")
       || `<tr><td colspan="4" class="loading">No calendar entries.</td></tr>`;
   };
   document.getElementById("calkid").addEventListener("change", render);
