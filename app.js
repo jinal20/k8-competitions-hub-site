@@ -51,6 +51,20 @@ function compCard(c, kidId, extra = "") {
   </div>`;
 }
 
+// Grade filter: a competition matches a grade if that grade falls within the
+// competition's grade span (min..max of its grades array). Handles ranges like
+// [0,5,8] ("K–8") and single grades like [7] uniformly.
+const GRADE_OPTIONS = [
+  { value: "All", label: "Any grade" },
+  { value: "0", label: "Kindergarten" },
+  ...Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: `Grade ${i + 1}` })),
+];
+function gradeMatches(comp, grade) {
+  const gs = comp.grades;
+  if (!Array.isArray(gs) || !gs.length) return true;
+  return grade >= Math.min(...gs) && grade <= Math.max(...gs);
+}
+
 function directoryView() {
   const cats = ["All", ...Object.keys(state.legend.categories || {})];
   const scopes = ["All", ...Object.keys(state.legend.scopes || {})];
@@ -61,6 +75,7 @@ function directoryView() {
       <select id="fcat">${cats.map(c => `<option>${c}</option>`).join("")}</select>
       <select id="fscope">${scopes.map(s => `<option>${s}</option>`).join("")}</select>
       <select id="ftype">${types.map(t => `<option>${t}</option>`).join("")}</select>
+      <select id="fgrade">${GRADE_OPTIONS.map(g => `<option value="${g.value}">${g.label}</option>`).join("")}</select>
       <label><input type="checkbox" id="ffree" /> Free only</label>
       <span class="count" id="count"></span>
     </div>
@@ -70,17 +85,19 @@ function directoryView() {
     const cat = document.getElementById("fcat").value;
     const scope = document.getElementById("fscope").value;
     const type = document.getElementById("ftype").value;
+    const grade = document.getElementById("fgrade").value;
     const free = document.getElementById("ffree").checked;
     const rows = state.competitions.filter(c =>
       (!q || (c.name + " " + (c.description||"") + " " + (c.notes||"")).toLowerCase().includes(q)) &&
       (cat === "All" || c.category === cat) &&
       (scope === "All" || c.scope === scope) &&
       (type === "All" || c.entry_type === type) &&
+      (grade === "All" || gradeMatches(c, Number(grade))) &&
       (!free || /\$?0\b|free/i.test(c.fee || "")));
     document.getElementById("grid").innerHTML = rows.map(c => compCard(c, "")).join("") || `<p class="loading">No matches.</p>`;
     document.getElementById("count").textContent = `${rows.length} of ${state.competitions.length}`;
   };
-  ["q","fcat","fscope","ftype","ffree"].forEach(id =>
+  ["q","fcat","fscope","ftype","fgrade","ffree"].forEach(id =>
     document.getElementById(id).addEventListener("input", render));
   render();
 }
@@ -147,8 +164,7 @@ function scholarshipsView() {
     app.replaceChildren();
     const p = document.createElement("p");
     p.className = "loading";
-    p.textContent = "The full scholarship directory is maintained by @KamanaBhaskaran " +
-      "and isn't published here. Contact her (kamana.bhaskaran@gmail.com) for the complete list.";
+    p.textContent = "No scholarships are published here yet.";
     app.appendChild(p);
     return;
   }
